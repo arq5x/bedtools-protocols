@@ -485,9 +485,9 @@ Download BigWig files for the Sp1 transcription factor and
 a negative control.
 
 ~~~~ {.bash}
-    wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/  wgEncodeHaibTfbs/wgEncodeHaibTfbsH1hescSp1Pcr1xRawRep1.bigWig
+    wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsH1hescSp1Pcr1xRawRep1.bigWig
     
-    wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/  wgEncodeHaibTfbs/wgEncodeHaibTfbsH1hescRxlchPcr1xRawRep1.bigWig
+    wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/wgEncodeHaibTfbsH1hescRxlchPcr1xRawRep1.bigWig
 ~~~~
 
 Map the Sp1 transcription factor.
