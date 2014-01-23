@@ -514,7 +514,9 @@ from both Sp1 and the negative control.
 
 ~~~~ {.bash}
     # sort by the window number
-    sort -k5,5n sp1.tss.window.coverage.bedg \
+    # -t$'\t' to specify that TABS should 
+    # be used as the delimiter
+    sort -t$'\t' -k5,5n sp1.tss.window.coverage.bedg \
     | bedtools groupby \
                -i - \
                -g 5 \
@@ -522,8 +524,7 @@ from both Sp1 and the negative control.
                -o sum \
     > sp1.tss.window.counts.txt
 
-    # sort by the window number
-    sort -k5,5n Rxl.tss.window.coverage.bedg \
+    sort -t$'\t' -k5,5n Rxl.tss.window.coverage.bedg \
     | bedtools groupby \
                -i - \
                -g 5 \
@@ -532,6 +533,39 @@ from both Sp1 and the negative control.
     > Rxl.tss.window.counts.txt
 ~~~~
 
+Plot the coverage around the TSS for SP1 and the control.
+
+~~~~ {.R}
+    > sp1 <- read.table('sp1.tss.window.counts.txt')
+    > rxl <- read.table('Rxl.tss.window.counts.txt')
+    
+    # Plot SP1 in red
+    > plot(sp1[,1], sp1[,2], 
+      +   col='darkred', 
+      +   xaxt = "n", 
+      +   xlab="Distance from TSS", 
+      +   ylab="Depth")
+    # Add the control in grey
+    > points(rxl[,1], rxl[,2], col='darkgrey')
+    
+    # adjust labels based on distance to TSS.
+    # recall that the window size is 5 base pairs
+    > axis(1, at=seq(0,400,40), labels=seq(-1000,1000,200))
+    
+    # add a vertical line at TSS
+    > abline(v = 200, col = "gray60", lwd=3, lty=3)
+    
+    # add a legend.
+    > legend('topright', 
+             c("SP1 Trans. factor","Reverse cross-link Control"),
+             lty=1, 
+             col=c('darkred', 'darkgrey'), 
+             bty='n')
+~~~~
+
+The resulting figure should look like this:
+
+![](protocols/map/tsscov.png)
 
 
 
