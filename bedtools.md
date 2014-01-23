@@ -411,9 +411,11 @@ At this point, we can check these results by inspecting the aligned sequence cov
 BP3: Something with the map tool.
 =====================================================
 
-Goal: plot TF binding occupancy around TSS for Sp1 and a control.
+Goal: plot TF binding occupancy around transcription start sites (TSS) for Sp1 and a control.
 Uses: bedtools, R, and free ENCODE data
 
+First, we must create a BED file of the TSSs. To do this, we will query the UCSC Genome Browser and choose the correct TSS based on 
+the transcript's strand.
 ~~~~ {.bash}
     # -N : no headers
     # -B : tab-delimted output
@@ -465,7 +467,9 @@ Now, let's add 1000 bp upstream and downstream of each TSS. To do this, we use t
     chr1    18758   20759   WASH7P  1   -
 ~~~~
 
-Make windows.
+To provide greater resolution to the plot we will produce, let's
+break up each 2000bp interval flanking each TSS into 5bp sub-wondows.
+We can easily do this with the `makewindows` command.
 
 ~~~~ {.bash}
     # the tr statement makes the window number the 5th column
