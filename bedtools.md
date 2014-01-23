@@ -410,9 +410,9 @@ At this point, we can check these results by inspecting the aligned sequence cov
 
 BP3: Something with the map tool.
 =====================================================
-- makewindows around TSS
-- count binding of Pol-II ChIP signal on + and - strand
-- make one of those cool Pybedtools Heatmaps
+
+Goal: plot TF binding occupancy around TSS for Sp1 and a control.
+Uses: bedtools, R, and free ENCODE data
 
 ~~~~ {.bash}
     # -N : no headers
