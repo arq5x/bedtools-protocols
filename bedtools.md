@@ -9,6 +9,9 @@ Abstract
 Introduction
 ============
 
+Sophistication through chaining multiple bedtools
+=================================================
+Analytical power in `bedtools` comes from the ability to "chain" together multiple tools in order to construct rather sophisicated analyses with very little programming - you just need **genome arithmetic**!  Have a look at the examples [here](http://bedtools.readthedocs.org/en/latest/content/advanced-usage.html).
 - put everything in a Github GIST
 
 We therefore encourage you to read the bedtools [documentation](http://bedtools.readthedocs.org/en/latest/).
@@ -582,19 +585,116 @@ The resulting figure should look like this:
 
 
 
-BP3: Analysis of ChIP datasets.
-=====================================================
-To do.
-
-
-
 BP4 : Comparing and exploring the relationships among many datasets.
 ===================================================================
-To do.
-multintersect
-unionbedgraph
-jaccard
 
+Download the sample BED files I have provided.
+
+    curl -O http://quinlanlab.cs.virginia.edu/cshl2013/maurano.dnaseI.tgz
+
+Now, we need to extract all of the 20 Dnase I hypersensitivity BED files from the "tarball" named
+`maurano.dnaseI.tgz`.
+
+    tar -zxvf maurano.dnaseI.tgz
+    rm maurano.dnaseI.tgz
+
+
+Your directory should now contain 20 BED files, which reflect Dnase I hypersensitivity sites measured in twenty different fetal tissue samples from the brain, heart, intestine, kidney, lung, muscle, skin, and stomach.
+
+Example finding the regions in the fetal intestine samples.
+
+~~~~ {.bash}
+    bedtools multiinter -i fIntestine*.bed \
+                        -header \
+                        -names DS16559 DS16712 DS16822 DS17808 DS18495 \
+    | head
+    chrom   start   end num list    DS16559 DS16712 DS16822 DS17808 DS18495
+    chr1    10148   10150   2   DS16712,DS17808 0   1   0   1   0
+    chr1    10150   10151   3   DS16712,DS16822,DS17808 0   1   1   1   0
+    chr1    10151   10284   4   DS16559,DS16712,DS16822,DS17808 1   1   1   1   0
+    chr1    10284   10315   3   DS16559,DS16712,DS17808 1   1   0   1   0
+    chr1    10315   10353   2   DS16712,DS17808 0   1   0   1   0
+    chr1    237719  237721  1   DS16822 0   0   1   0   0
+    chr1    237721  237728  3   DS16712,DS16822,DS17808 0   1   1   1   0
+    chr1    237728  237783  4   DS16559,DS16712,DS16822,DS17808 1   1   1   1   0
+    chr1    237783  237784  3   DS16559,DS16712,DS16822 1   1   1   0   0
+~~~~
+
+What portion of the DnaseI hypersensitivity sites are found in 1,2,3,...20 of the cell types assayed?
+
+~~~~ {.bash}
+    bedtools multiinter -i *.bed \
+        | awk '{print $4"\t"$3-$2}' \
+        | sort -k1,1n \
+        | bedtools groupby -g 1 -c 2 -o sum \
+    > dnase.occupancy.dist.txt
+
+    cat dnase.occupancy.dist.txt
+    1   172639699
+    2   70626095
+    3   51945770
+    4   35992709
+    5   27751090
+    6   18118487
+    7   13375483
+    8   10759033
+    9   8887535
+    10  7421260
+    11  6229434
+    12  5512967
+    13  4964581
+    14  4499490
+    15  4252603
+    16  4181704
+    17  4430412
+    18  4892327
+    19  6148254
+        20  10996900
+~~~~
+
+
+Plot the distribution of occupancy.
+
+~~~~ {.R}
+    > dnase_occ <- read.table('dnase.occupancy.dist.txt')
+
+    # Plot the fraction of bases found to
+    # be DnaseI heypersensitive in 1, 2, 3, ... 20 cells assayed.
+    > plot(dnase_occ[,1], dnase_occ[,2] / sum(dnase_occ[,2]), 'h', 
+      +   col="darkred", 
+      +   lwd=4, 
+      +   xlab="No. of assayed cells", 
+      +   ylab="Fraction of bases")
+~~~~
+
+The resulting figure should look like this:
+
+![](protocols/multiple-datasets/dnaseI-occupancy.png)
+
+This demonstrates that among these 20 assayed cells the majority of hypersensitive bases are exclusive to a single cell.
+
+
+AP4a: What is the DnaseI hypersensitivity signal from each cell type at each interval? 
+======================================================================================
+
+Example finding the regions in the fetal intestine samples.
+
+~~~~ {.bash}
+    bedtools unionbed -i fIntestine*.bed \
+                        -header \
+                        -names DS16559 DS16712 DS16822 DS17808 DS18495 \
+    | head
+    chrom   start   end DS16559 DS16712 DS16822 DS17808 DS18495
+    chr1    10148   10150   0   7.76326 0   12.6573 0
+    chr1    10150   10151   0   7.76326 9.704   12.6573 0
+    chr1    10151   10284   9.71568 7.76326 9.704   12.6573 0
+    chr1    10284   10315   9.71568 7.76326 0   12.6573 0
+    chr1    10315   10353   0   7.76326 0   12.6573 0
+    chr1    237719  237721  0   0   7.36415 0   0
+    chr1    237721  237728  0   11.4351 7.36415 7.88268 0
+    chr1    237728  237783  8.57969 11.4351 7.36415 7.88268 0
+    chr1    237783  237784  8.57969 11.4351 7.36415 0   0
+~~~~
 
 
 BP5 : Distance measures.
@@ -602,154 +702,99 @@ BP5 : Distance measures.
 To do.
 
 
-
-Sophistication through chaining multiple bedtools
-=================================================
-Analytical power in `bedtools` comes from the ability to "chain" together multiple tools in order to construct rather sophisicated analyses with very little programming - you just need **genome arithmetic**!  Have a look at the examples [here](http://bedtools.readthedocs.org/en/latest/content/advanced-usage.html).
-
-
 \
 
 
-Principal component analysis
-=============================
+BP6 : Measuring dataset similarity.
+====================================
 
-We will use the bedtools implementation of a Jaccard statistic to meaure the similarity of two 
-datasets. Briefly, the Jaccard statistic measures the ratio of the number of *intersecting* base 
-pairs to the *total* number of base pairs in the two sets.  As such, the score ranges from 0.0 to 1.
-0; lower values reflect lower similarity, whereas higher values reflect higher similarity.
+We will use the bedtools implementation of a Jaccard statistic to meaure the 
+similarity of two datasets. Briefly, the Jaccard statistic measures the ratio 
+of the number of *intersecting* base pairs to the *total* number of base 
+pairs in the two sets.  As such, the score ranges from 0.0 to 1.
+0; lower values reflect lower similarity, whereas higher values reflect 
+higher similarity.
 
-Let's walk through an example: we would expect the Dnase hypersensivity sites to be rather similar 
-between two samples of the **same** fetal tissue type.  Let's test:
+Let's walk through an example: we would expect the Dnase hypersensivity 
+sites to be rather similar between two samples of the **same** fetal tissue 
+type.  Let's test:
 
+~~~~ {.bash}
     bedtools jaccard \
         -a fHeart-DS16621.hotspot.twopass.fdr0.05.merge.bed \
         -b fHeart-DS15839.hotspot.twopass.fdr0.05.merge.bed
     intersection    union   jaccard
     81269248    160493950   0.50637
+~~~~
 
 But what about the similarity of two **different** tissue types?
 
+~~~~ {.bash}
     bedtools jaccard \
         -a fHeart-DS16621.hotspot.twopass.fdr0.05.merge.bed \
         -b fSkin_fibro_bicep_R-DS19745.hg19.hotspot.twopass.fdr0.05.merge.bed
     intersection    union   jaccard
     28076951    164197278   0.170995
+~~~~
 
-Hopefully this demonstrates how the Jaccard statistic can be used as a simple statistic to reduce 
-the dimensionality of the comparison between two large (e.g., often containing thousands or 
-millions of intervals) feature sets.
+Hopefully this demonstrates how the Jaccard statistic can be used as a simple 
+statistic to reduce the dimensionality of the comparison between two large (e.g., 
+often containing thousands or millions of intervals) feature sets.
 
+We are going to take this a bit further and use the Jaccard statistic to 
+measure the similarity of all 20 tissue samples against all other 20 samples. We will 
+use BASH script loops to compute a Jaccard statistic for the 400 (20*20) pairwise 
+comparisons among the fetal tissue samples.
 
-\
+~~~~ {.bash}
+    file_labels=`ls *.bed | sed -e 's/.hotspot.twopass.fdr0.05.merge.bed//g' \
+                                       -e 's/.hg19//g'`
+    echo name" "$file_labels >> pairwise_jaccard.txt
+    for file1 in `ls *.bed`
+    do
+        # make reasonable file labels
+        file1_short=`echo $file1 \
+                    | sed -e 's/.hotspot.twopass.fdr0.05.merge.bed//g' \
+                    -e 's/.hg19//g'`
+        echo -n $file1_short >> pairwise_jaccard.txt
 
-
-A Jaccard statistic for all 400 pairwise comparisons.
-------------------------------------------------------
-
-
-We are going to take this a bit further and use the Jaccard statistic to measure the similarity of 
-all 20 tissue samples against all other 20 samples.  Once we have a 20x20 matrix of similarities, 
-we can use dimensionality reduction techniques such as hierarchical clustering or principal 
-component analysis to detect higher order similarities among **all** of the datasets.
-
-
-We will use GNU parallel to compute a Jaccard statistic for the 400 (20*20) pairwise comparisons 
-among the fetal tissue samples.
-
-But first, we need to install [GNU parallel](http://www.gnu.org/software/parallel/).
-
-    brew install parallel
-
-Next, we need to install a tiny script I wrote for this analysis.
-
-    curl -O http://quinlanlab.cs.virginia.edu/cshl2013/make-matrix.py
-
-
-Now, we can use `parallel` to, you guessed it, compute the 400 pairwise Jaccard statistics in parallel using as many processors as you have available.
-
-    parallel "bedtools jaccard -a {1} -b {2} \
-             | awk 'NR>1' \
-             | cut -f 3 \
-             > {1}.{2}.jaccard" \
-             ::: `ls *.merge.bed` ::: `ls *.merge.bed`
-
-This command will create a single file containing the pairwise Jaccard measurements from all 400 tests.
-
-    find . \
-        | grep jaccard \
-        | xargs grep "" \
-        | sed -e s"/\.\///" \
-        | perl -pi -e "s/.bed./.bed\t/" \
-        | perl -pi -e "s/.jaccard:/\t/" \
-        > pairwise.dnase.txt
-
-A bit of cleanup to use more intelligible names for each of the samples.
-
-    cat pairwise.dnase.txt \
-    | sed -e 's/.hotspot.twopass.fdr0.05.merge.bed//g' \
-    | sed -e 's/.hg19//g' \
-    > pairwise.dnase.shortnames.txt
- 
-Now let's make a 20x20 matrix of the Jaccard statistic. This will allow the data to play nicely with R.
-
-    awk 'NF==3' pairwise.dnase.shortnames.txt \
-    | awk '$1 ~ /^f/ && $2 ~ /^f/' \
-    | python make-matrix.py \
-    > dnase.shortnames.distance.matrix
- 
-Let's also make a file of labels for each dataset so that we can label each dataset in our R plot.
-
-    cut -f 1 dnase.shortnames.distance.matrix | cut -f 1 -d "-" | cut -f 1 -d "_" > labels.txt
- 
-Now start up R. (This assumes you have installed the `ggplot2` package).
-
-    R
-
-You should see something very similar to this:
-
-
-    R version 2.15.1 (2012-06-22) -- "Roasted Marshmallows"
-    Copyright (C) 2012 The R Foundation for Statistical Computing
-    ISBN 3-900051-07-0
-    Platform: x86_64-apple-darwin12.0.0 (64-bit)
-    
-    R is free software and comes with ABSOLUTELY NO WARRANTY.
-    You are welcome to redistribute it under certain conditions.
-    Type 'license()' or 'licence()' for distribution details.
-    
-      Natural language support but running in an English locale
-    
-    R is a collaborative project with many contributors.
-    Type 'contributors()' for more information and
-    'citation()' on how to cite R or R packages in publications.
-    
-    Type 'demo()' for some demos, 'help()' for on-line help, or
-    'help.start()' for an HTML browser interface to help.
-    Type 'q()' to quit R.
-    
-    >
-
-No paste these commands into the R console:
-
-    library(ggplot2)
-    library(RColorBrewer)
-    blues <- colorRampPalette(c('dark blue', 'light blue'))
-    greens <- colorRampPalette(c('dark green', 'light green'))
-    reds <- colorRampPalette(c('pink', 'dark red'))
+        for file2 in `ls *.bed`;
+        do
+            # compute the jaccard stat for these two files.
+            jaccard=`bedtools jaccard \
+                       -a $file1 \
+                       -b $file2 \
+                       -valueOnly`
+            
+            # report the jaccard stat for these two files
+            echo -n " "$jaccard >> pairwise_jaccard.txt
+        done
+        echo >> pairwise_jaccard.txt
+    done
+~~~~
      
-    setwd("~/Desktop/bedtools-demo")
-    x <- read.table('dnase.shortnames.distance.matrix')
-    labels <- read.table('labels.txt')
-    ngroups <- length(unique(labels))
-    pca <- princomp(x)
-    qplot(pca$scores[,1], pca$scores[,2], color=labels[,1],     geom="point", size=1) +
-      scale_color_manual(values = c(blues(4), greens(5), reds(5))) 
+Since the Jaccard statistic serves as a measure of the similarity of two datasets,
+we can use a simple heatmap to graphically convey the overall similarity of all 20 
+DnaseI hypersensitivity patterns.
 
-You should see this:
+~~~~ {.R}
+    # install RColorBrewer if missing
+    if (!require("RColorBrewer")) {
+        install.packages("RColorBrewer")
+        library(RColorBrewer)
+    }
 
+    jaccard_table <- read.table('pairwise_jaccard.txt', header=TRUE)
+    row.names(jaccard_table) <- jaccard_table$name
+    jaccard_table <- jaccard_table[, -1]
+    jaccard_matrix <- as.matrix(jaccard_table)
+    heatmap.2(jaccard_matrix, 
+              col=brewer.pal(9,"Blues"), 
+              margins = c(14, 14),
+              density.info = "none",
+              lhei = c(2, 8),
+              trace="none")
+~~~~
 
-Et voila. Note that PCA was used in this case as an example of what PCA does for the CSHL Adv. Seq. course. Heatmaps are a more informative visualization in this case.
-
-
+![](protocols/multiple-datasets/heatmap.png)
 
