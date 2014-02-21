@@ -57,17 +57,21 @@ The `intersect` command is the workhorse of the `bedtools` suite. It compares tw
 
 By default, `intersect` reports the intervals that represent overlaps between your two files.  To demonstrate, let's identify all of the CpG islands that overlap exons.
 
+~~~~ {#mycode .bash}
     bedtools intersect -a cpg.bed -b exons.bed | head -5
     chr1    29320   29370   CpG:_116
     chr1    135124  135563  CpG:_30
     chr1    327790  328229  CpG:_29
     chr1    327790  328229  CpG:_29
     chr1    327790  328229  CpG:_29
+~~~~
+
 
 AP1a: Reporting the original feature in each file.
 --------------------------------------------------
 The `-wa` (write A) and `-wb` (write B) options allow one to see the original records from the A and B files that overlapped.  As such, instead of not only showing you *where* the intersections occurred, it shows you *what* intersected.
 
+~~~~ {#mycode .bash}
     bedtools intersect -a cpg.bed -b exons.bed -wa -wb \
     | head -5
     chr1    28735   29810   CpG:_116    chr1    29320   29370   NR  _024540_exon_10_0_chr1_29321_r    0   -
@@ -75,11 +79,14 @@ The `-wa` (write A) and `-wb` (write B) options allow one to see the original re
     chr1    327790  328229  CpG:_29 chr1    324438  328581  NR_ 028322_exon_2_0_chr1_324439_f    0   +
     chr1    327790  328229  CpG:_29 chr1    327035  328581  NR_ 028327_exon_3_0_chr1_327036_f    0   +
     chr1    327790  328229  CpG:_29 chr1    324438  328581  NR_ 028325_exon_2_0_chr1_324439_f    0   +
+~~~~
+
 
 AP1b: How many base pairs of overlap were there?
 ------------------------------------------------
 The `-wo` (write overlap) option allows one to also report the *number* of base pairs of overlap between the features that overlap between each of the files.
 
+~~~~ {#mycode .bash}
     bedtools intersect -a cpg.bed -b exons.bed -wo \
     | head -5
     chr1    28735   29810   CpG:_116    chr1    29320   29370   NR  _024540_exon_10_0_chr1_29321_r    0   -   50
@@ -87,11 +94,14 @@ The `-wo` (write overlap) option allows one to also report the *number* of base 
     chr1    327790  328229  CpG:_29 chr1    324438  328581  NR_ 028322_exon_2_0_chr1_324439_f    0   +   439
     chr1    327790  328229  CpG:_29 chr1    327035  328581  NR_ 028327_exon_3_0_chr1_327036_f    0   +   439
     chr1    327790  328229  CpG:_29 chr1    324438  328581  NR_ 028325_exon_2_0_chr1_324439_f    0   +   439
+~~~~
+
 
 AP1c: Counting the number of overlapping features.
 --------------------------------------------------
 We can also count, for each feature in the "A" file, the number of overlapping features in the "B" file. This is handled with the `-c` option.
 
+~~~~ {#mycode .bash}
     bedtools intersect -a cpg.bed -b exons.bed -c \
     | head -5
     chr1    28735   29810   CpG:_116    1
@@ -99,13 +109,13 @@ We can also count, for each feature in the "A" file, the number of overlapping f
     chr1    327790  328229  CpG:_29 3
     chr1    437151  438164  CpG:_84 0
     chr1    449273  450544  CpG:_99 0
-
-\
+~~~~
 
 AP1d: Find features that DO NOT overlap
 --------------------------------------------
 Often we want to identify those features in our A file that **do not** overlap features in the B file. The `-v` option is your friend in this case.
 
+~~~~ {#mycode .bash}
     bedtools intersect -a cpg.bed -b exons.bed -v \
     | head -5
     chr1    437151  438164  CpG:_84
@@ -113,6 +123,8 @@ Often we want to identify those features in our A file that **do not** overlap f
     chr1    533219  534114  CpG:_94
     chr1    544738  546649  CpG:_171
     chr1    801975  802338  CpG:_24
+~~~~
+
 
 AP1e: Require a minimal fraction of overlap.
 --------------------------------------------
@@ -120,6 +132,7 @@ Recall that the default is to report overlaps between features in A and B so lon
 
 Let's be more strict and require 50% of overlap.
 
+~~~~ {#mycode .bash}
     bedtools intersect \
              -a cpg.bed \
              -b exons.bed \
@@ -131,6 +144,7 @@ Let's be more strict and require 50% of overlap.
     chr1    327790  328229  CpG:_29 chr1    327035  328581  NR_ 028327_exon_3_0_chr1_327036_f    0   +   439
     chr1    327790  328229  CpG:_29 chr1    324438  328581  NR_ 028325_exon_2_0_chr1_324439_f    0   +   439
     chr1    788863  789211  CpG:_28 chr1    788770  794826  NR_ 047525_exon_4_0_chr1_788771_f    0   +   348
+~~~~
 
 AP1f: Require intersections with the same strand
 ------------------------------------------------
@@ -239,6 +253,7 @@ AP2a: Which genome regions had reduced or excessive coverage?
              -bga \
     > NA19146.coverage.bedg
 ~~~~
+
 Since we now have a BEDGRAPH representing the coverage through the entire genome of NA19146, we can use simple
 awk filters to extract intervals with insufficent coverage.
 Based on the distribution shown above (Figure/Panel), we might define insufficent coverage as those regions with less than five aligned sequences. In the BEDGRAPH format,
@@ -411,14 +426,20 @@ At this point, we can check these results by inspecting the aligned sequence cov
 **FIGURE!!!**
 
 
-BP3: Something with the map tool.
-=====================================================
+AP2c: Coverage in genomic windows normalized by GC content.
+===========================================================
+
+
+
+BP3: Plot transcription factor occupancy surrounding the transcription start site.
+==================================================================================
 
 Goal: plot TF binding occupancy around transcription start sites (TSS) for Sp1 and a control.
 Uses: bedtools, R, and free ENCODE data
 
 First, we must create a BED file of the TSSs. To do this, we will query the UCSC Genome Browser and choose the correct TSS based on 
 the transcript's strand.
+
 ~~~~ {.bash}
     # -N : no headers
     # -B : tab-delimted output
