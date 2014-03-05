@@ -2,12 +2,20 @@
 % Aaron Quinlan
 % November 22, 2013
 
+BEDTools: arithmetic on the genome.
+
 Abstract
 ========
+Technological advances have enabled the use of DNA sequencing as a flexible tool to characterize genetic variation and to measure the activity of diverse cellular phenomena such as gene isoform expression and transcription factor binding. Extracting biological insight from the experiments enabled by these advances demands the analysis of large, multi-dimensional datasets. This unit describes the use of the BEDTools toolkit for the exploration of high-throughput genomics datasets. I present several protocols for common genomic analyses and demonstrate how multiple BEDTools operations may be combined to quickly address complex analysis tasks.
 
 
 Introduction
 ============
+Modern genomics research combines high throughput DNA sequencing technologies with computational and statistical analysis to gain insight into genome biology. Interpreting genomic datasets is complicated by the spectrum of experimental assays that are now possible (*cite Pachter*) and the scale of the data generated. Additional complexity comes from the fact that sever genomics data formats, such as BED, GFF, VCF, BAM, and BigWig are used by the research community. While these data formats differ in their intent and structure, they each describe the attributes of one or more genome intervals. A genome interval represents a consecutive stretch of nucleotides on a chromosome or assembly scaffold (**Figure**), and most genomic analyses can be distilled to "genome arithmetic": that is, the comparison of sets of many genome intervals. For example, quantifying transcript expression in RNA-seq experiments is fundamentally a process of counting the number of cDNA alignments (i.e., intervals in BAM format) that overlap transcript annotations (i.e., intervals in GFF or BED format).
+
+BEDTools is an open source software package...
+
+
 
 Sophistication through chaining multiple bedtools
 =================================================
@@ -349,6 +357,7 @@ AP2b: Assessing coverage in exome capture experiments
     # Compute the histogram of coverage for each target, as 
     # well as across all targets.
     bedtools coverage \
+             -hist \
              -abam NA12891.exome.bam \
              -b 20130108.exome.targets.numeric.chroms.bed \
     > NA12891.exome.coverage.hist.txt
