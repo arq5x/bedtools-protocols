@@ -13,57 +13,196 @@ Introduction
 ============
 Modern genomics research combines high throughput DNA sequencing technologies with computational and statistical analysis to gain insight into genome biology. Interpreting genomic datasets is complicated by the spectrum of experimental assays that are now possible (*cite Pachter*) and the scale of the data generated. Additional complexity comes from the fact that sever genomics data formats, such as BED, GFF, VCF, BAM, and BigWig are used by the research community. While these data formats differ in their intent and structure, they each describe the attributes of one or more genome intervals. A genome interval represents a consecutive stretch of nucleotides on a chromosome or assembly scaffold (**Figure**), and most genomic analyses can be distilled to "genome arithmetic": that is, the comparison of sets of many genome intervals. For example, quantifying transcript expression in RNA-seq experiments is fundamentally a process of counting the number of cDNA alignments (i.e., intervals in BAM format) that overlap transcript annotations (i.e., intervals in GFF or BED format).
 
-BEDTools is an open source software package...
-
-
-
-Sophistication through chaining multiple bedtools
-=================================================
-Analytical power in `bedtools` comes from the ability to "chain" together multiple tools in order to construct rather sophisicated analyses with very little programming - you just need **genome arithmetic**!  Have a look at the examples [here](http://bedtools.readthedocs.org/en/latest/content/advanced-usage.html).
-- put everything in a Github GIST
-
-We therefore encourage you to read the bedtools [documentation](http://bedtools.readthedocs.org/en/latest/).
-
-The bedtools help
------------------
-To bring up the help, just type
-
-    bedtools
-
-As you can see, there are multiple "subcommands" and for bedtools to
-work you must tell it which subcommand you want to use. Examples:
-
-    bedtools intersect
-    bedtools merge
-    bedtools subtract
-
+BEDTools is an open source software package comprised of multiple tools for comparing and exploring genomic datasets via fundamental "genome arithmetic" tasks. While the individual tools in the BEDTools suite are each focused on a relatively simple task (e.g., interval intersection), complex analyses are possible by properly combining multiple tools. The goals of this unit are to introduce the basic concepts of genome arithmetic with BEDTools and to demonstrate, via biologically relevant examples, how analytical power is conferred through clever combinations of individual tools. I emphasize that this unit is intended to give new users a sense of what is possible with the BEDTools suite. Interested users are encouraged to read the BEDTools documentation (bedtools.readthedocs.org), as there are currently 39 subcommands, yet only a subset are covered in this unit.
 
 
 Strategic Planning
 ==================
-- setup
-- basic usage
-- conventions:
-    black font: command line
-    blue font: R console
-- dependencies
-    - bedtools
-    - R
-    - R packages?
-    - samtools?
-    - mysql
-- sorting 
-    -show chromsweep comparison plot
-- genome files
+The protocols described in this unit require a computer with a UNIX, Linux, or Apple OSX operating system. Microsoft Windows users may also complete the unit if they first install Cygwin, but Windows usage is not directly supported. In the following sections, I will describe how to install BEDTools and other required software, as well as the basic usage concepts.
+
+Conventions
+-------------------
+Throughout this unit, I will demonstrate BEDTools usage via 
+commands issued on the UNIX command line. Such commands will use a different font as follows. Also, the "$" character is intended
+to represent the command prompt and should not be typed.
+
+~~~~ {#mycode .bash}
+    $ bedtools --help
+~~~~
+
+Additionally, this unit will include commands in the R programming language, primarily as a means for creating plots
+describing the results of BEDTools analyses. Such commands will use the same font, yet will be preceded by a ">" to denote the
+R command prompt. The ">" should likewise not be typed.
+
+~~~~ {#mycode .R}
+    > x <- c(1,2,3)
+~~~~
+
+
+Background knowledge
+--------------------
+This unit assumes that the reader has previous experience working on the UNIX command line, as well as a basic understanding of common genomics file formats such as BED, VCF, GFF, and BAM. If not, I encourage you to first read the bedtools documentation (bedtools.readthedocs.org), as well as the manuscripts describing the above formats. There are also many freely available tutorials on the Internet that describe the basics of working on the UNIX command line.
+
+
+Installing BEDTools
+-------------------
+BEDTools is freely available software that is archived and maintained on GitHub. The latest version of BEDTools can always be found at the following URL: https://github.com/arq5x/bedtools2/releases. At the time this unit as written, the latest release was 2.19.1. Future readers should check for subsequent releases and adjust the installation commands below accordingly.
+
+**Necessary Resources**
+- a C/C++ compiler such as GCC. For OSX users, this typically requires the installation of the Xcode developer tools.
+- the zlib and zlib-devel compression libraries (installed by default on many systems)
+
+1. Download and compile the latest version of bedtools. In this example, we are downloading version 2.19.1.
+
+~~~~ {#mycode .bash}
+    curl -OL https://github.com/arq5x/bedtools2/releases/download/v2.19.0/bedtools-2.19.0.tar.gz
+    tar -zxvf bedtools-2.19.0.tar.gz
+    cd bedtools2-2.19.0
+    make
+    
+    # At this point, you need to make the bedtools executable 
+    # accessible on your system. If you have administrator 
+    # privileges, you can do this by copying the bedtools
+    # executable to /usr/local/bin
+    cp bin/bedtools /usr/local/bin/
+
+    # if you do not have administrator privileges, you should
+    # copy the executable to a "bin" directory located within
+    # your home directory and then update your PATH to know
+    # where bedtools can be found
+    mkdir ~/bin
+    cp bin/bedtools ~/bin
+    PATH=PATH:~/bin
+~~~~
+
+2. Alternatively, bedtools is also available via package management software available on most UNIX systems.
+
+~~~~ {#mycode .bash}
+    # Fedora / Centos
+    $ yum install bedtools
+
+    # Debian / Ubuntu
+    $ apt-get install bedtools
+
+    # OSX (via HomeBrew)
+    $ brew install bedtools
+~~~~
+
+
+Downloading datasets for this unit
+----------------------------------
+To do.
+cpg.bed
+exons.bed
+
+
+The bedtools help
+-----------------
+The BEDTools software package is comprised of many subtools. One can be reminded of the tools available and a brief
+summary of their functionality by typing the following on the command line:
+
+~~~~ {#mycode .bash}
+    $ bedtools --help
+~~~~
+
+If bedtools has been installed correctly, on your system, you should see several examples of the bedtools "subcommands:. If not, please refer back to step 1 above.
+
+~~~~ {#mycode .bash}
+    $ bedtools --help
+    bedtools: flexible tools for genome arithmetic and DNA sequence analysis.
+    usage:    bedtools <subcommand> [options]
+
+    The bedtools sub-commands include:
+
+    [ Genome arithmetic ]
+        intersect     Find overlapping intervals in various ways.
+        window        Find overlapping intervals within a window around an interval.
+        closest       Find the closest, potentially non-overlapping interval.
+        coverage      Compute the coverage over defined intervals.
+        map           Apply a function to a column for each overlapping interval.
+        genomecov     Compute the coverage over an entire genome.
+        merge         Combine overlapping/nearby intervals into a single interval.
+        cluster       Cluster (but do not merge) overlapping/nearby intervals.
+        complement    Extract intervals _not_ represented by an interval file.
+        subtract      Remove intervals based on overlaps b/w two files.
+        slop          Adjust the size of intervals.
+        flank         Create new intervals from the flanks of existing intervals.
+        sort          Order the intervals in a file.
+        random        Generate random intervals in a genome.
+        shuffle       Randomly redistrubute intervals in a genome.
+        sample        Sample random records from file using reservoir sampling.
+        annotate      Annotate coverage of features from multiple files.
+~~~~
+
+In order to conduct an analysis of genomic intervals with BEDTools, one must employ one of the BEDTools subcommands. I will illustrate this with the `intersect` subcommand (more details will be provided in the first protocol). For example, to intersect BED files representing Alu elements and CpG islands, one would use the following command.
+
+
+~~~~ {#mycode .bash}
+    $ bedtools intersect -a alu.bed -b cpg.bed
+~~~~
+
+One may also request a detailed help menu regarding the specifics of each tool as follows.
+
+~~~~ {#mycode .bash}
+    $ bedtools intersect -h
+~~~~
+
+All other subcommands follow the same basic convention.
+
+~~~~ {#mycode .bash}
+    $ bedtools [SUBCOMMAND] [OPTIONS]
+~~~~
+
+
+Working with "genome-sorted" datasets
+-------------------------------------
+The default algorithm that BEDTools employes for detecting overlapping genomic intervals loads one file into an R-tree data structure. While fast, it can consume substantial memory, especially for very large files. For this reason, we provide an alternative, yet very fast and memory efficient algorithm that requires one's input files to be "genome-sorted": that is, sorted first by chromosome and then by start position. When both input files are genome-sorted, the algorithm can “sweep” through the data and detect overlaps on the fly in a manner much like the way database systems join two tables. This algorithm is invoked via the `-sorted` option and its use is demonstrated through the manuscript. The performance gains conferred through the use of "genome-sorted" datasets are illustrated in Figure 1.
+
+![](https://bedtools.readthedocs.org/en/latest/_images/memory-comparo.png)
+
+
+Genome files
+------------
+Some of the BEDTools subcommand need to know the size of each of the chromosomes from the organism with which you are working. These "genome" files must be tab delimited; the first column must be the chromosome label and the second column must be the length of the chromosome. For example, below is an example "genome" file for build 37 (a.k.a "hg19") of the human genome.
+
+~~~~ {#mycode .bash}
+    $ head -24 human.hg19.genome
+    chr1    249250621
+    chr2    243199373
+    chr3    198022430
+    chr4    191154276
+    chr5    180915260
+    chr6    171115067
+    chr7    159138663
+    chrX    155270560
+    chr8    146364022
+    chr9    141213431
+    chr10   135534747
+    chr11   135006516
+    chr12   133851895
+    chr13   115169878
+    chr14   107349540
+    chr15   102531392
+    chr16   90354753
+    chr17   81195210
+    chr18   78077248
+    chr20   63025520
+    chrY    59373566
+    chr19   59128983
+    chr22   51304566
+    chr21   48129895
+~~~~
 
 
 
 BP1: Intersecting genome feature files 
 =====================================================
 
-The `intersect` command is the workhorse of the `bedtools` suite. It compares two BED/VCF/GFF files (or a BAM file and one of the aforementioned files) and identifies all the regions in the gemome where the features in the two files overlap (that is, share at least one base pair in common).
+The `intersect` command is the workhorse of the BEDTools suite. It compares two BED/VCF/GFF/BAM files and reports all of the genomic where the features in the two files overlap (that is, share at least one base pair in common).
 
-By default, `intersect` reports the intervals that represent overlaps between your two files.  To demonstrate, let's identify all of the CpG islands that overlap exons.
+By default, `intersect` reports the subset of intervals that are common between your two files. The "A" file is considered the "query" file, whereas the "B" file is considered the "database" file. The BEDTools convention is to, for the most part, report results with respect the the "query" (A) file.
+
+To demonstrate, let's identify all of the CpG islands that overlap exons.
 
 ~~~~ {#mycode .bash}
     bedtools intersect -a cpg.bed -b exons.bed | head -5
@@ -77,7 +216,7 @@ By default, `intersect` reports the intervals that represent overlaps between yo
 
 AP1a: Reporting the original feature in each file.
 --------------------------------------------------
-The `-wa` (write A) and `-wb` (write B) options allow one to see the original records from the A and B files that overlapped.  As such, instead of not only showing you *where* the intersections occurred, it shows you *what* intersected.
+The `-wa` (write A) and `-wb` (write B) options allow one to see the original records from the A and B files that overlapped.  As such, instead of solely showing you *where* the intersections occurred, these options show you the original intervals that intersected from the two files.
 
 ~~~~ {#mycode .bash}
     bedtools intersect -a cpg.bed -b exons.bed -wa -wb \
@@ -121,7 +260,7 @@ We can also count, for each feature in the "A" file, the number of overlapping f
 
 AP1d: Find features that DO NOT overlap
 --------------------------------------------
-Often we want to identify those features in our A file that **do not** overlap features in the B file. The `-v` option is your friend in this case.
+Often we want to identify those features in our "A" file that **do not** overlap features in the B file. The `-v` option is your friend in this case.
 
 ~~~~ {#mycode .bash}
     bedtools intersect -a cpg.bed -b exons.bed -v \
@@ -153,18 +292,6 @@ Let's be more strict and require 50% of overlap.
     chr1    327790  328229  CpG:_29 chr1    324438  328581  NR_ 028325_exon_2_0_chr1_324439_f    0   +   439
     chr1    788863  789211  CpG:_28 chr1    788770  794826  NR_ 047525_exon_4_0_chr1_788771_f    0   +   348
 ~~~~
-
-AP1f: Require intersections with the same strand
-------------------------------------------------
-
-AP1g: Require intersections with opposite strands
--------------------------------------------------
-
-AP1h: Working with sorted data.
--------------------------------------------------
-Figure comparing bedtools to bedops.
-
-\
 
 
 BP2: Assessing coverage in DNA sequencing experiments 
